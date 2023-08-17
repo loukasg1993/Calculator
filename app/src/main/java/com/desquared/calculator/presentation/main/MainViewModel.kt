@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(private val repository: Repository) : ViewModel() {
     private val _conversionResult = MutableLiveData<ConversionResponse>()
+    private val accessKey = "994c230f3d40de390f38c43c309eeb36"
     val conversionResult: LiveData<ConversionResponse>
     get() = _conversionResult
 
@@ -21,12 +22,12 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
    fun fetchConversionResult(currency: String){
        viewModelScope.launch {
            try {
-               val response = repository.convertCurrency("994c230f3d40de390f38c43c309eeb36")
+               val response = repository.convertCurrency(accessKey)
                response.currency = currency
                _conversionResult.postValue(response)
            }
            catch (e: Exception) {
-               _errorMessage.value = e.message
+               _errorMessage.postValue(e.message)
            }
        }
     }

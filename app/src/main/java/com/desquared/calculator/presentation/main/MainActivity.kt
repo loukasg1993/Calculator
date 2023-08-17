@@ -5,14 +5,11 @@ import android.content.SharedPreferences
 import android.icu.text.DecimalFormat
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.PopupWindow
-import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -42,7 +39,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun setUpListeners(){
+    private fun setUpListeners() {
         binding.output.movementMethod = ScrollingMovementMethod()
 
         binding.historyButton.setOnClickListener {
@@ -69,6 +66,11 @@ class MainActivity : AppCompatActivity() {
         binding.buttonErase.setOnClickListener {
             val removedLast = binding.input.text.toString().dropLast(1)
             binding.input.text = removedLast
+        }
+
+        binding.buttonErase.setOnLongClickListener {
+            binding.input.text = ""
+            true
         }
 
         binding.button0.setOnClickListener {
@@ -105,17 +107,17 @@ class MainActivity : AppCompatActivity() {
             binding.input.text = addToInputText(".")
         }
         binding.buttonDivision.setOnClickListener {
-            binding.input.text = addToInputText("÷")
+            binding.input.text = addSymbolToInputText("÷")
         }
         binding.buttonMultiply.setOnClickListener {
-            binding.input.text = addToInputText("×")
+            binding.input.text = addSymbolToInputText("×")
         }
 
         binding.buttonSubtraction.setOnClickListener {
-            binding.input.text = addToInputText("-")
+            binding.input.text = addSymbolToInputText("-")
         }
         binding.buttonAddition.setOnClickListener {
-            binding.input.text = addToInputText("+")
+            binding.input.text = addSymbolToInputText("+")
         }
 
         binding.buttonEquals.setOnClickListener {
@@ -127,17 +129,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun initializeHistoryAdapter(){
+    private fun initializeHistoryAdapter() {
         sharedPreferences = getSharedPreferences("CalculatorPrefs", Context.MODE_PRIVATE)
-        calculationList =
-            sharedPreferences.getStringSet("calculations", null)?.toMutableList() ?: mutableListOf()
+        calculationList = sharedPreferences.getStringSet("calculations", null)?.toMutableList() ?: mutableListOf()
 
-        val adapter = ArrayAdapter(this, R.layout.history_list_item,R.id.text1, calculationList)
+        val adapter = ArrayAdapter(this, R.layout.history_list_item, R.id.text1, calculationList)
         binding.historyListView.adapter = adapter
         binding.historyListView.setOnItemClickListener { _, _, position, _ ->
             val selectedItem = calculationList[position]
-            binding.input.text = selectedItem.split("\n")[0]
-            binding.output.text = selectedItem.split("\n")[1]
+            binding.input.text = selectedItem.split("\n=")[0]
+            binding.output.text = selectedItem.split("\n=")[1]
             binding.output.setTextColor(ContextCompat.getColor(this, R.color.orange))
         }
         binding.clearHistoryButton.setOnClickListener {
@@ -155,7 +156,7 @@ class MainActivity : AppCompatActivity() {
         if (calculationList.isEmpty()) {
             calculationList.add(0, item)
         } else {
-            if(!calculationList.contains(item))
+            if (!calculationList.contains(item))
                 calculationList.add(calculationList.size, item)
         }
         if (calculationList.size > 6) {
@@ -207,8 +208,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-
-
         popupWindow.showAsDropDown(anchorView)
     }
 
@@ -241,6 +240,24 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun addSymbolToInputText(buttonValue: String): String {
+        if (binding.input.text.isNotEmpty() && binding.input.text.last().toString() in listOf(
+                "×",
+                "÷",
+                "*",
+                "+",
+                "-"
+            )
+        ) {
+            val newText = binding.input.text.dropLast(1)
+            binding.input.text = newText
+            return binding.input.text.toString() + "" + buttonValue
+        } else if (binding.input.text.isNotEmpty()) {
+            return binding.input.text.toString() + "" + buttonValue
+        }
+        return ""
+    }
+
     private fun addToInputText(buttonValue: String): String {
 
         return binding.input.text.toString() + "" + buttonValue
@@ -262,7 +279,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 binding.output.text = DecimalFormat("0.###").format(result).toString()
                 binding.output.setTextColor(ContextCompat.getColor(this, R.color.orange))
-                addHistoryItem(binding.input.text.toString() + "\n" + binding.output.text.toString())
+                addHistoryItem(binding.input.text.toString() + "\n=" + binding.output.text.toString())
             }
         } catch (e: Exception) {
             binding.output.text = ""
